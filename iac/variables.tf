@@ -1,15 +1,16 @@
-variable "bucket_name" {
-  description = "Nombre del bucket de S3 para el estado remoto de Terraform"
-  type        = string
+
+variable "region" {
+  default = "us-east-1"
 }
 
-variable "dynamodb_table_name" {
-  description = "Nombre de la tabla de DynamoDB para locks"
-  type        = string
+variable "s3_bucket" {
+  description = "Nombre del bucket S3 para el backend remoto"
+}
+
+variable "s3_dynamodb_table" {
+  description = "Nombre de la tabla DynamoDB para el locking"
 }
 
 variable "environment" {
-  description = "Nombre del entorno (dev, prod, etc)"
-  type        = string
-  default     = "dev"
+  default = "dev"
 }

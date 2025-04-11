@@ -1,3 +1,5 @@
+name: $(Build.DefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
   branches:
     include:
@@ -5,7 +7,16 @@ trigger:
 
 variables:
   TF_VAR_region: "us-east-1"
-  TF_VAR_s3_bucket: "nombre-del-s3-bucket"
+  TF_VAR_acr_name: "acr-devops-app"
+  TF_VAR_cluster_name_1: "eks-cluster-1"
+  TF_VAR_cluster_name_2: "eks-cluster-2"
+  TF_VAR_vpc_cidr: "10.0.0.0/16"
+  TF_VAR_public_subnet_cidrs: '["10.0.1.0/24"]'
+  TF_VAR_private_subnet_cidrs: '["10.0.2.0/24"]'
+  TF_VAR_db_admin_username: "adminuser"
+  TF_VAR_db_admin_password: "ChangeMeSecure123!"
+
+  TF_VAR_s3_bucket: "terraform-backend-prueba"
   TF_VAR_s3_key: "iac/terraform.tfstate"
   TF_VAR_s3_dynamodb_table: "terraform-lock"
 
@@ -14,30 +25,34 @@ pool:
 
 stages:
   - stage: Terraform_Deploy
-    displayName: "Despliegue en AWS"
+    displayName: "🚀 Despliegue de Infraestructura AWS"
     condition: or(eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.SourceBranchName'], 'main'))
 
     jobs:
       - job: TerraformJob
-        displayName: "Inicializar y aplicar Terraform"
-        continueOnError: false
+        displayName: "Terraform Init, Plan y Apply"
         steps:
           - task: TerraformInstaller@1
+            displayName: "🧰 Instalar Terraform"
             inputs:
-              terraformVersion: 'latest'
+              terraformVersion: "latest"
 
           - task: TerraformTaskV4@4
             name: TerraformInit
-            displayName: "🌱 Inicialización Terraform"
+            displayName: "🌱 Inicializar Terraform"
             inputs:
               provider: "aws"
               command: "init"
               workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
               backendServiceAWS: "aws-terraform-prueba-eks"
+              backendAWSBucketName: "$(TF_VAR_s3_bucket)"
+              backendAWSKey: "$(TF_VAR_s3_key)"
+              backendAWSRegion: "$(TF_VAR_region)"
+              backendAWSDynamoDBTable: "$(TF_VAR_s3_dynamodb_table)"
 
           - task: TerraformTaskV4@4
             name: TerraformPlan
-            displayName: "🔍 Planificación Terraform"
+            displayName: "🔍 Plan Terraform"
             inputs:
               provider: "aws"
               command: "plan"
@@ -54,3 +69,15 @@ stages:
               command: "apply"
               workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
               environmentServiceNameAWS: "aws-terraform-prueba-eks"
+
+          - script: |
+              echo "📋 Recursos gestionados por Terraform:"
+              terraform state list
+            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
+            displayName: "📦 Listar estado Terraform"
+
+          - script: |
+              echo "🔑 Nombre del ACR:"
+              terraform output acr_login_server
+            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
+            displayName: "🔍 Obtener output ACR"

@@ -53,3 +53,17 @@ variable "sql_admin_password" {
   type        = string
   sensitive   = true
 }
+
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
+variable "region" {
+  default = "us-east-1"
+}
+variable "s3_bucket" {}
+variable "s3_key" {
+  default = "iac/terraform.tfstate"
+}
+variable "s3_dynamodb_table" {
+  default = "terraform-lock"
+}
+

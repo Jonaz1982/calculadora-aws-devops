@@ -73,4 +73,4 @@ Módulo unittest (incluido en la librería estándar)
 - Configura un pipeline de CI/CD usando Azure DevOps. El pipeline debe incluir:
   1. **Build**: Compilar el código.
   2. **Test**: Ejecutar pruebas unitarias y enviar los resultados a Sonarqube.
-  3. **Deploy**: Desplegar la aplicación en un clúster AKS en Azure.
+  3. **Deploy**: Desplegar la aplicación en un clúster EKS en Aws.

@@ -1,69 +1,15 @@
-variable "location" {
-  description = "Azure region"
+variable "bucket_name" {
+  description = "Nombre del bucket de S3 para el estado remoto de Terraform"
+  type        = string
+}
+
+variable "dynamodb_table_name" {
+  description = "Nombre de la tabla de DynamoDB para locks"
   type        = string
 }
 
 variable "environment" {
-  description = "Deployment environment (e.g., dev, prod)"
+  description = "Nombre del entorno (dev, prod, etc)"
   type        = string
+  default     = "dev"
 }
-
-variable "resource_group_name" {
-  description = "Name of the resource group"
-  type        = string
-}
-
-variable "vnet_address_space" {
-  description = "Address space for the virtual network"
-  type        = list(string)
-}
-
-variable "aks_name_1" {
-  description = "Name of the first AKS cluster"
-  type        = string
-}
-
-variable "aks_name_2" {
-  description = "Name of the second AKS cluster"
-  type        = string
-}
-
-variable "node_vm_size" {
-  description = "VM size for AKS nodes"
-  type        = string
-}
-
-variable "node_min_count" {
-  description = "Minimum node count for AKS autoscaling"
-  type        = number
-}
-
-variable "node_max_count" {
-  description = "Maximum node count for AKS autoscaling"
-  type        = number
-}
-
-variable "sql_admin_user" {
-  description = "Admin username for the SQL Server"
-  type        = string
-}
-
-variable "sql_admin_password" {
-  description = "Admin password for the SQL Server"
-  type        = string
-  sensitive   = true
-}
-
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
-variable "region" {
-  default = "us-east-1"
-}
-variable "s3_bucket" {}
-variable "s3_key" {
-  default = "iac/terraform.tfstate"
-}
-variable "s3_dynamodb_table" {
-  default = "terraform-lock"
-}
-

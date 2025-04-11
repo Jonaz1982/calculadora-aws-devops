@@ -3,7 +3,7 @@ name: $(Build.DefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
 trigger:
   branches:
     include:
-      - main
+      - dev
 
 pr:
   branches:

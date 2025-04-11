@@ -1,72 +1,56 @@
-name: $(Build.DefinitionName)_$(Date:yyyyMMdd)$(Rev:.r)
-
 trigger:
   branches:
     include:
       - main
 
 variables:
-  TF_VAR_location: "eastus"
-  TF_VAR_environment: "dev"
-  TF_VAR_resource_group_name: "rgtest"
-  backend_storage_account: "tfbackendstorage"
-  backend_container_name: "terraform-state"
-  backend_key: "iac/terraform.tfstate"
+  TF_VAR_region: "us-east-1"
+  TF_VAR_s3_bucket: "nombre-del-s3-bucket"
+  TF_VAR_s3_key: "iac/terraform.tfstate"
+  TF_VAR_s3_dynamodb_table: "terraform-lock"
 
 pool:
   vmImage: "ubuntu-latest"
 
 stages:
   - stage: Terraform_Deploy
-    displayName: "Despliegue de Infraestructura en Azure"
+    displayName: "Despliegue en AWS"
+    condition: or(eq(variables['Build.Reason'], 'Manual'), eq(variables['Build.SourceBranchName'], 'main'))
+
     jobs:
-      - job: DeployInfra
-        displayName: "Terraform Init, Plan & Apply"
+      - job: TerraformJob
+        displayName: "Inicializar y aplicar Terraform"
+        continueOnError: false
         steps:
-          - task: UsePythonVersion@0
-            displayName: "Seleccionar versión de Python 3.x"
+          - task: TerraformInstaller@1
             inputs:
-              versionSpec: "3.x"
-              addToPath: true
+              terraformVersion: 'latest'
 
           - task: TerraformTaskV4@4
             name: TerraformInit
-            displayName: "🌱 Terraform Init"
+            displayName: "🌱 Inicialización Terraform"
             inputs:
-              provider: "azurerm"
+              provider: "aws"
               command: "init"
               workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
-              backendServiceArm: "ConexionAzureServicePrincipal1"
-              backendAzureRmResourceGroupName: "rgtest"
-              backendAzureRmStorageAccountName: "rgterraformdevops01"
-              backendAzureRmContainerName: "terraform"
-              backendAzureRmKey: "iac/terraform.tfstate"
+              backendServiceAWS: "aws-terraform-prueba-eks"
 
-          - script: |
-              echo "🔍 Ejecutando terraform plan con código de salida"
-              terraform plan -out=tfplan
-              echo "##vso[task.setvariable variable=TF_CHANGES;isOutput=true]$?"
-            name: PlanTerraform
-            displayName: "🔍 Terraform Plan (manual)"
-            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
+          - task: TerraformTaskV4@4
+            name: TerraformPlan
+            displayName: "🔍 Planificación Terraform"
+            inputs:
+              provider: "aws"
+              command: "plan"
+              workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
+              environmentServiceNameAWS: "aws-terraform-prueba-eks"
+            continueOnError: true
 
-          - script: |
-              echo "✅ Aplicando cambios de Terraform"
-              terraform apply -auto-approve tfplan
-            displayName: "🚀 Terraform Apply (si hay cambios)"
-            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
-            condition: eq(variables['TF_CHANGES'], '2')
-
-          - script: |
-              echo "📋 Recursos gestionados por Terraform:"
-              terraform state list
-            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
-            displayName: "📋 Listar estado de Terraform"
-            condition: eq(variables['TF_CHANGES'], '2')
-
-          - script: |
-              echo "📦 Nombre del ACR creado:"
-              terraform output acr_login_server
-            workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
-            displayName: "📦 Obtener nombre del ACR"
-            condition: eq(variables['TF_CHANGES'], '2')
+          - task: TerraformTaskV4@4
+            name: TerraformApply
+            displayName: "🚀 Aplicar Terraform"
+            condition: succeeded()
+            inputs:
+              provider: "aws"
+              command: "apply"
+              workingDirectory: "$(System.DefaultWorkingDirectory)/iac"
+              environmentServiceNameAWS: "aws-terraform-prueba-eks"
